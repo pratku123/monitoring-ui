@@ -79,16 +79,24 @@ export default function MonitoringHome() {
       <br></br>
       </div>
       <div>
-      <form className="load-logs">
-        Load more latest logs
+      <form>
+        { currentLogs && currentLogs.length>0 &&
+        <button className="load-logs">
+          Load more latest logs
+        </button>
+        }
       </form>
       <div className="logs-table">
         {currentLogs.map((log, index) => (
           <div className="log-row"> {log} </div>
         ))}
       </div>
-      <form className="load-logs">
-        Load more older logs
+      <form>
+      { currentLogs && currentLogs.length>0 &&
+        <button className="load-logs">
+          Load more older logs
+        </button>
+      }
       </form>
       </div>
     </main>
