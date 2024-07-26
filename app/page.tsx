@@ -2,8 +2,8 @@
 import { FormEvent, useState } from "react";
 //http://localhost:3000/logs?numberOfLogs=30&logFileName=abc&startIndex=1010023&endIndex=1009994
 
-// let currentLogs: string[] = [];
-let currentResponse: any = {};
+let currentResponseStart: any = {};
+let currentResponseEnd: any = {};
 let fetchRequest: any = {};
 let errorMessage: string  = "";
 async function fetchLogs(fetchRequestData: any) {
@@ -32,50 +32,51 @@ async function fetchLogs(fetchRequestData: any) {
 
 export default function MonitoringHome() {
   const [currentLogs, setCurrentLogs] = useState<string[]>([]);
-
+  const [errorMessage, setErrorMessage] = useState<string>("");
   function appendLogsStart(event: FormEvent<HTMLFormElement>) {
-    errorMessage = "";
+    setErrorMessage("");
     event.preventDefault();
     let fetchRequestData = {
       numberOfLogs: fetchRequest.numberOfLogs,
       logFileName: fetchRequest.logFileName,
-      startIndex: currentResponse.start,
-      endIndex: currentResponse.end,
+      startIndex: currentResponseStart.start,
+      endIndex: currentResponseStart.end,
       rev: -1
     };
 
     fetchLogs(fetchRequestData)
     .then(r => {
       let response: any = r;
-      fetchRequest = fetchRequestData;
-      currentResponse = response.data;
-      let oldLogs: string[] = currentLogs;
-      let newLogs: string[] = currentResponse.logs;
+      let newLogs = response.data.logs;
       if (newLogs.length <=0) {
-        errorMessage = "No new logs";
+        setErrorMessage("No new logs");
+      } else {
+        fetchRequest = fetchRequestData;
+        currentResponseStart = response.data;
+        let oldLogs: string[] = currentLogs;
+        let logs = newLogs.concat(oldLogs);
+        setCurrentLogs(logs);
       }
-      let logs = newLogs.concat(oldLogs);
-      setCurrentLogs(logs);
     });
   }
   
   function appendLogsEnd(event: FormEvent<HTMLFormElement>) {
-    errorMessage = "";
+    setErrorMessage("");
     event.preventDefault();
     let fetchRequestData = {
       numberOfLogs: fetchRequest.numberOfLogs,
       logFileName: fetchRequest.logFileName,
-      startIndex: currentResponse.start,
-      endIndex: currentResponse.end
+      startIndex: currentResponseEnd.start,
+      endIndex: currentResponseEnd.end
     };
 
     fetchLogs(fetchRequestData)
     .then(r => {
       let response: any = r;
       fetchRequest = fetchRequestData;
-      currentResponse = response.data;
+      currentResponseEnd = response.data;
       let oldLogs: string[] = currentLogs;
-      let newLogs: string[] = currentResponse.logs;
+      let newLogs: string[] = currentResponseEnd.logs;
       let logs = oldLogs.concat(newLogs);
       setCurrentLogs(logs);
     });
@@ -84,7 +85,7 @@ export default function MonitoringHome() {
 
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
-    errorMessage = "";
+    setErrorMessage("");
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let numberOfLogs = formData.get("numberOfLogs");
@@ -92,17 +93,18 @@ export default function MonitoringHome() {
     if(!logFileName){
       return;
     }
+    
     let fetchRequestData = {
       numberOfLogs,
       logFileName
     };
-
     fetchLogs(fetchRequestData)
     .then(r => {
       let response: any = r;
       fetchRequest = fetchRequestData;
-      currentResponse = response.data;
-      setCurrentLogs(currentResponse.logs);
+      currentResponseStart = response.data;
+      currentResponseEnd = response.data;
+      setCurrentLogs(response.data.logs);
     });
   }
 
