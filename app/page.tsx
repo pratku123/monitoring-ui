@@ -1,13 +1,12 @@
 'use client';
-import { FormEvent } from "react";
+import { FormEvent, useState } from "react";
 //http://localhost:3000/logs?numberOfLogs=30&logFileName=abc&startIndex=1010023&endIndex=1009994
 
-let fetchRequestJson = null;
-let currentLogs = [];
-let responseJson = null;
+// let currentLogs: string[] = [];
+let currentResponse: any = {};
 
 async function fetchLogs(fetchRequestData: any) {
-  let getLogsUrl = "http://localhost:3000/logs?";
+  let getLogsUrl = "http://localhost:3000/logs/get?";
   getLogsUrl = getLogsUrl + "logFileName="+ fetchRequestData.logFileName;
   if(fetchRequestData.numberOfLogs) {
     getLogsUrl = getLogsUrl + "&numberOfLogs="+fetchRequestData.numberOfLogs;
@@ -21,13 +20,13 @@ async function fetchLogs(fetchRequestData: any) {
   if(fetchRequestData.rev) {
     getLogsUrl = getLogsUrl + "&rev="+fetchRequestData.rev;
   }
-  const response = await fetch(getLogsUrl);
-  if (!response.ok) {
-    throw new Error(`Response status: ${response.status}`);
-  }
-
-  const json = await response.json(); 
-  responseJson = json;
+  return fetch(getLogsUrl)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+      return response.json();
+    });
 }
 
 function appendLogsStart() {
@@ -41,11 +40,13 @@ function appendLogsEnd() {
 
 
 export default function MonitoringHome() {
+  const [currentLogs, setCurrentLogs] = useState<string[]>([]);
+
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const numberOfLogs = formData.get("numberOfLogs");
-    const logFileName = formData.get("logFileName");
+    let numberOfLogs = formData.get("numberOfLogs");
+    let logFileName = formData.get("logFileName");
     if(!logFileName){
       return;
     }
@@ -53,8 +54,13 @@ export default function MonitoringHome() {
       numberOfLogs,
       logFileName
     };
-    fetchRequestJson = fetchRequestData;
-    fetchLogs(fetchRequestData);
+    fetchLogs(fetchRequestData)
+    .then(r => {
+      let response: any = r;
+      currentResponse = response.data;
+      console.log(response);
+      setCurrentLogs(currentResponse.logs);
+    });
   }
 
   return (
@@ -73,10 +79,15 @@ export default function MonitoringHome() {
       <br></br>
       </div>
       <div>
-      <form>
+      <form className="load-logs">
         Load more latest logs
       </form>
-      <form>
+      <div className="logs-table">
+        {currentLogs.map((log, index) => (
+          <div className="log-row"> {log} </div>
+        ))}
+      </div>
+      <form className="load-logs">
         Load more older logs
       </form>
       </div>
