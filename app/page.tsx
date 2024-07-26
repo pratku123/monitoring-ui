@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 // let currentLogs: string[] = [];
 let currentResponse: any = {};
 let fetchRequest: any = {};
-
+let errorMessage: string  = "";
 async function fetchLogs(fetchRequestData: any) {
   let getLogsUrl = "http://localhost:3000/logs/get?";
   getLogsUrl = getLogsUrl + "logFileName="+ fetchRequestData.logFileName;
@@ -34,12 +34,34 @@ export default function MonitoringHome() {
   const [currentLogs, setCurrentLogs] = useState<string[]>([]);
 
   function appendLogsStart(event: FormEvent<HTMLFormElement>) {
+    errorMessage = "";
+    event.preventDefault();
+    let fetchRequestData = {
+      numberOfLogs: fetchRequest.numberOfLogs,
+      logFileName: fetchRequest.logFileName,
+      startIndex: currentResponse.start,
+      endIndex: currentResponse.end,
+      rev: -1
+    };
 
+    fetchLogs(fetchRequestData)
+    .then(r => {
+      let response: any = r;
+      fetchRequest = fetchRequestData;
+      currentResponse = response.data;
+      let oldLogs: string[] = currentLogs;
+      let newLogs: string[] = currentResponse.logs;
+      if (newLogs.length <=0) {
+        errorMessage = "No new logs";
+      }
+      let logs = newLogs.concat(oldLogs);
+      setCurrentLogs(logs);
+    });
   }
   
   function appendLogsEnd(event: FormEvent<HTMLFormElement>) {
+    errorMessage = "";
     event.preventDefault();
-    console.log(currentResponse);
     let fetchRequestData = {
       numberOfLogs: fetchRequest.numberOfLogs,
       logFileName: fetchRequest.logFileName,
@@ -62,6 +84,7 @@ export default function MonitoringHome() {
 
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
+    errorMessage = "";
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let numberOfLogs = formData.get("numberOfLogs");
@@ -99,12 +122,12 @@ export default function MonitoringHome() {
       <br></br>
       </div>
       <div>
-      <form onSubmit={appendLogsEnd}>
+      <form onSubmit={appendLogsStart}>
         { currentLogs && currentLogs.length>0 &&
         <button className="load-logs">
           Load more latest logs
         </button>
-        }
+        } <span className="error-message">{errorMessage}</span>
       </form>
       <div className="logs-table">
         {currentLogs.map((log, index) => (

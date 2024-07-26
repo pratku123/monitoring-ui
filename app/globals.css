@@ -25,3 +25,7 @@
 .log-row {
   /* text-align: center; */
 }
+
+.error-message{ 
+  margin-left: 10px;
+}
