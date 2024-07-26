@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 
 // let currentLogs: string[] = [];
 let currentResponse: any = {};
+let fetchRequest: any = {};
 
 async function fetchLogs(fetchRequestData: any) {
   let getLogsUrl = "http://localhost:3000/logs/get?";
@@ -29,18 +30,36 @@ async function fetchLogs(fetchRequestData: any) {
     });
 }
 
-function appendLogsStart() {
-
-}
-
-function appendLogsEnd() {
-
-}
-
-
-
 export default function MonitoringHome() {
   const [currentLogs, setCurrentLogs] = useState<string[]>([]);
+
+  function appendLogsStart(event: FormEvent<HTMLFormElement>) {
+
+  }
+  
+  function appendLogsEnd(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    console.log(currentResponse);
+    let fetchRequestData = {
+      numberOfLogs: fetchRequest.numberOfLogs,
+      logFileName: fetchRequest.logFileName,
+      startIndex: currentResponse.start,
+      endIndex: currentResponse.end
+    };
+
+    fetchLogs(fetchRequestData)
+    .then(r => {
+      let response: any = r;
+      fetchRequest = fetchRequestData;
+      currentResponse = response.data;
+      let oldLogs: string[] = currentLogs;
+      let newLogs: string[] = currentResponse.logs;
+      let logs = oldLogs.concat(newLogs);
+      setCurrentLogs(logs);
+    });
+  
+  }
+
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,11 +73,12 @@ export default function MonitoringHome() {
       numberOfLogs,
       logFileName
     };
+
     fetchLogs(fetchRequestData)
     .then(r => {
       let response: any = r;
+      fetchRequest = fetchRequestData;
       currentResponse = response.data;
-      console.log(response);
       setCurrentLogs(currentResponse.logs);
     });
   }
@@ -79,7 +99,7 @@ export default function MonitoringHome() {
       <br></br>
       </div>
       <div>
-      <form>
+      <form onSubmit={appendLogsEnd}>
         { currentLogs && currentLogs.length>0 &&
         <button className="load-logs">
           Load more latest logs
@@ -91,7 +111,7 @@ export default function MonitoringHome() {
           <div className="log-row"> {log} </div>
         ))}
       </div>
-      <form>
+      <form onSubmit={appendLogsEnd}>
       { currentLogs && currentLogs.length>0 &&
         <button className="load-logs">
           Load more older logs
